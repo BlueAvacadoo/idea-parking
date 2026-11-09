@@ -1,0 +1,1069 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Idea Parking</title>
+<link rel="icon" href="data:,">
+<style>
+  :root{
+    --bg:#fff6e5;
+    --paper:#ffffff;
+    --ink:#1d1b2e;
+    --muted:#6b6880;
+    --asphalt:#3a3d46;
+    --line:#f4f4f0;
+    --accent:#ff6b6b;
+    --accent-2:#4dabf7;
+    --ok:#2f9e44;
+    --danger:#e03131;
+    --warn:#ffd43b;
+    --radius:14px;
+    --shadow:0 4px 14px rgba(29,27,46,.12);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    line-height:1.4;
+  }
+  header.app{padding:20px 16px 4px;text-align:center}
+  h1{margin:0;font-size:clamp(1.7rem,4vw,2.3rem)}
+  .tagline{color:var(--muted);margin:4px 0 12px}
+  h2{margin:0 0 6px;font-size:1.35rem}
+  h3{margin:12px 0 8px;font-size:1.05rem}
+  .muted{color:var(--muted)}
+  main{max-width:960px;margin:0 auto;padding:12px 16px 40px}
+
+  /* Tabs */
+  .tabs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:12px 0}
+  .tab{
+    font:inherit;font-weight:600;padding:8px 14px;border-radius:999px;
+    border:2px solid var(--ink);background:#fff;color:var(--ink);cursor:pointer;
+  }
+  .tab[aria-current="page"]{background:var(--ink);color:#fff}
+
+  /* Stats */
+  details.stats{
+    max-width:960px;margin:0 auto;padding:8px 16px;
+  }
+  details.stats summary{
+    cursor:pointer;font-weight:700;padding:6px 0;list-style:none;
+  }
+  details.stats summary::-webkit-details-marker{display:none}
+  details.stats summary::before{content:"▸ ";}
+  details.stats[open] summary::before{content:"▾ ";}
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:8px}
+  .stat{background:var(--paper);border-radius:12px;padding:10px 12px;box-shadow:var(--shadow);display:flex;flex-direction:column}
+  .stat .num{font-size:1.6rem;font-weight:800}
+  .stat .label{font-size:.9rem}
+  .breakdown{margin:6px 0 0;padding-left:18px;font-size:.85rem;color:var(--muted)}
+
+  /* Banners */
+  .banner{
+    background:var(--paper);border-left:6px solid var(--accent-2);
+    padding:10px 14px;border-radius:10px;margin-bottom:12px;
+    display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;
+  }
+  .banner.full{border-color:var(--danger)}
+  .banner.pick{border-color:var(--ok)}
+
+  /* Parking lot */
+  .lot{
+    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;
+    background:var(--asphalt);padding:18px;border-radius:20px;box-shadow:var(--shadow);
+  }
+  @media (max-width:520px){
+    .lot{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px}
+  }
+  .spot{
+    position:relative;min-height:150px;min-width:0;
+    border:3px solid var(--line);border-radius:10px;background:#44484f;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:28px 8px 8px;color:#f0f0f0;font:inherit;text-align:center;
+  }
+  button.spot{cursor:pointer}
+  .spot.target{border-style:dashed;border-color:var(--accent-2);background:#4a5a72;animation:pulse 1.2s infinite}
+  @keyframes pulse{50%{box-shadow:0 0 0 6px rgba(77,171,247,.35)}}
+  @media (prefers-reduced-motion:reduce){.spot.target{animation:none}}
+  .spot-num{
+    position:absolute;top:6px;left:6px;background:var(--paper);color:var(--ink);
+    border-radius:999px;font-weight:800;font-size:.8rem;width:26px;height:26px;
+    display:grid;place-items:center;
+  }
+  .spot-name{
+    margin-top:4px;font-size:.85rem;max-width:100%;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .empty-label{opacity:.75;font-size:.9rem}
+  .spot .car-svg{max-width:150px}
+  .lot-foot{text-align:center;color:var(--muted);margin-top:8px;font-size:.9rem}
+
+  /* Car SVG */
+  .car-svg{display:block;width:100%;height:auto;max-width:200px;margin:0 auto}
+
+  /* Cards / lists */
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .toolbar select{font:inherit;padding:6px 8px;border-radius:8px;border:2px solid #e3dcc9}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+  .card{
+    background:var(--paper);border:none;border-radius:var(--radius);padding:10px;
+    box-shadow:var(--shadow);cursor:pointer;font:inherit;color:inherit;
+    display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;
+  }
+  .card-name{font-weight:600;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .badge{
+    display:inline-block;background:#fff3bf;border-radius:999px;
+    padding:2px 8px;font-size:.8rem;font-weight:600;
+  }
+  .arch-list{list-style:none;margin:0;padding:0}
+  .arch-item{
+    display:flex;gap:12px;align-items:center;background:var(--paper);
+    padding:10px;border-radius:12px;box-shadow:var(--shadow);margin-bottom:10px;
+  }
+  .arch-item .car-svg{width:120px;flex:0 0 auto;margin:0}
+  .panel{background:var(--paper);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+  .empty{text-align:center;padding:24px;color:var(--muted)}
+
+  /* Buttons */
+  .btn{
+    font:inherit;font-weight:600;padding:10px 16px;border-radius:999px;
+    border:2px solid var(--ink);background:#fff;color:var(--ink);cursor:pointer;
+  }
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+  .btn.warn{background:var(--warn);border-color:var(--warn)}
+  .btn.danger{color:var(--danger);border-color:var(--danger)}
+  .btn.ghost{border-color:transparent;background:transparent}
+  .btn.small{padding:4px 10px;font-size:.9rem}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  :focus-visible{outline:3px solid var(--accent-2);outline-offset:2px}
+
+  /* Form */
+  .idea-form .preview{background:#fffdf7;border-radius:12px;padding:12px;margin-bottom:12px}
+  .idea-form .preview .car-svg{max-width:220px}
+  .field{margin-bottom:12px}
+  .field label,.field .label-row{display:flex;justify-content:space-between;font-weight:600;margin-bottom:4px}
+  input[type="text"],textarea{
+    width:100%;font:inherit;padding:10px 12px;border:2px solid #e3dcc9;
+    border-radius:10px;background:#fffdf7;color:var(--ink);
+  }
+  textarea{resize:vertical}
+  .count{font-weight:400;color:var(--muted);font-size:.85rem}
+  .err{color:var(--danger);font-size:.9rem;min-height:1.2em}
+  fieldset{border:none;padding:0;margin:0 0 12px}
+  legend{font-weight:600;margin-bottom:6px;padding:0}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{
+    padding:8px 12px;border-radius:999px;border:2px solid #e3dcc9;background:#fff;
+    font:inherit;cursor:pointer;color:var(--ink);
+  }
+  .chip[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .swatches{display:flex;flex-wrap:wrap;gap:10px}
+  .swatch{
+    width:36px;height:36px;border-radius:50%;border:3px solid #fff;
+    box-shadow:0 0 0 2px #cfc7b0;background:var(--c);cursor:pointer;padding:0;
+  }
+  .swatch[aria-pressed="true"]{box-shadow:0 0 0 3px var(--ink)}
+  .stickers{display:flex;flex-wrap:wrap;gap:8px}
+  .sticker{
+    font-size:1.4rem;width:46px;height:46px;border-radius:12px;
+    border:2px solid #e3dcc9;background:#fff;cursor:pointer;padding:0;
+  }
+  .sticker[aria-pressed="true"]{border-color:var(--accent);background:#ffe3e3}
+  .hint{margin:4px 0 0;color:var(--muted);font-size:.85rem}
+  .form-actions{display:flex;gap:10px;margin-top:8px}
+
+  /* Dialog */
+  dialog{
+    border:none;border-radius:18px;padding:0;width:min(640px,94vw);max-height:90vh;
+    background:var(--paper);color:var(--ink);box-shadow:0 10px 40px rgba(0,0,0,.3);
+  }
+  dialog::backdrop{background:rgba(29,27,46,.5)}
+  .dialog-inner{padding:20px;overflow:auto;max-height:90vh;position:relative}
+  .close-x{position:absolute;top:10px;right:10px;font-size:1.2rem;padding:4px 10px}
+  .detail-head{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+  .detail-head .car-svg{width:180px;flex:0 0 auto;margin:0}
+  .desc{white-space:pre-wrap;margin:12px 0}
+  .actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+  hr{border:none;border-top:2px dashed #e3dcc9;margin:16px 0}
+
+  /* Footer */
+  footer.data-tools{
+    display:flex;flex-wrap:wrap;gap:8px;justify-content:center;
+    padding:20px 16px 40px;
+  }
+
+  /* Toast */
+  #toast{
+    position:fixed;left:50%;bottom:20px;transform:translate(-50%,160%);
+    background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;
+    transition:transform .25s ease;max-width:90vw;z-index:100;text-align:center;
+  }
+  #toast.show{transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <h1>🅿️ Idea Parking</h1>
+  <p class="tagline">Park your ideas. Sell the good ones.</p>
+  <nav class="tabs" aria-label="Views">
+    <button class="tab" data-view="lot">🅿️ Parking lot</button>
+    <button class="tab" data-view="collection">🚗 Collection</button>
+    <button class="tab" data-view="add">➕ Add idea</button>
+    <button class="tab" data-view="archive">🗄️ Archive</button>
+  </nav>
+</header>
+
+<details class="stats" open>
+  <summary>📊 Stats</summary>
+  <div id="stats"></div>
+</details>
+
+<main id="main"></main>
+
+<footer class="data-tools">
+  <button class="btn" data-action="export">⬇️ Export backup</button>
+  <button class="btn" data-action="import">⬆️ Import backup</button>
+  <button class="btn danger" data-action="reset">🗑️ Reset all data</button>
+  <input type="file" id="import-file" accept="application/json,.json" hidden>
+</footer>
+
+<dialog id="dialog" aria-labelledby="detail-title">
+  <div id="dialog-body"></div>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  /* ---------- Constants ---------- */
+  const KEY = 'ideaParking.v1';
+  const SPOT_COUNT = 6;
+  const SHAPES = ['Sedan','Hatchback','Coupe','SUV','Pickup','Convertible','Van'];
+  const COLOURS = [
+    {name:'Red',    hex:'#e63946'},
+    {name:'Blue',   hex:'#1d6fd8'},
+    {name:'Green',  hex:'#2a9d57'},
+    {name:'Yellow', hex:'#f9c80e'},
+    {name:'Black',  hex:'#222831'},
+    {name:'White',  hex:'#f5f5f5'},
+    {name:'Purple', hex:'#7b4dd6'},
+    {name:'Orange', hex:'#f77f00'},
+  ];
+  const COLOUR_NAMES = COLOURS.map(c => c.name);
+  const STICKERS = ['💡','🚀','🎨','🔧','📚','🌱','🎵','⭐','🔥','🧩','🏆','🌍'];
+
+  const SHAPE_PATHS = {
+    Sedan: {
+      body: 'M18 78 L18 62 Q18 56 26 54 L52 46 L76 24 Q82 20 92 20 L126 20 Q134 20 140 26 L164 46 L180 52 Q186 54 186 62 L186 78 Z',
+      windows: ['M60 46 L78 28 L96 28 L96 46 Z','M102 28 L124 28 L146 46 L102 46 Z']
+    },
+    Hatchback: {
+      body: 'M18 78 L18 60 Q18 54 26 52 L50 46 L70 22 Q76 18 88 18 L150 18 Q160 20 168 40 L182 56 Q186 60 186 66 L186 78 Z',
+      windows: ['M58 46 L74 26 L94 26 L94 46 Z','M100 26 L150 26 L162 46 L100 46 Z']
+    },
+    Coupe: {
+      body: 'M18 78 L18 62 Q18 56 28 54 L58 48 L84 26 Q92 20 104 20 L128 22 Q140 24 150 42 L178 52 Q186 56 186 64 L186 78 Z',
+      windows: ['M68 47 L86 30 L104 30 L104 47 Z','M110 30 L126 30 L142 47 L110 47 Z']
+    },
+    SUV: {
+      body: 'M16 78 L16 40 Q16 22 34 20 L140 16 Q166 16 176 30 L184 48 L184 78 Z',
+      windows: ['M28 30 L60 28 L60 48 L28 48 Z','M66 28 L110 27 L110 48 L66 48 Z','M116 27 L150 30 L162 48 L116 48 Z']
+    },
+    Pickup: {
+      body: 'M18 78 L18 50 Q18 42 28 42 L48 40 L60 24 Q64 20 74 20 L100 20 L100 42 L184 42 L184 78 Z',
+      windows: ['M62 27 L74 27 L92 27 L92 40 L54 40 Z']
+    },
+    Convertible: {
+      body: 'M18 78 L18 60 Q18 54 28 52 L56 46 L82 30 Q90 26 110 26 L132 30 Q146 34 158 46 L180 52 Q186 56 186 64 L186 78 Z',
+      windows: ['M66 46 L84 33 L104 33 L104 46 Z','M110 33 L128 36 L142 46 L110 46 Z']
+    },
+    Van: {
+      body: 'M14 78 L14 26 Q14 18 24 18 L150 18 Q162 18 170 30 L184 52 L186 60 L186 78 Z',
+      windows: ['M24 26 L80 26 L80 50 L24 50 Z','M150 26 L162 26 L174 48 L150 48 Z']
+    }
+  };
+
+  /* ---------- Data ---------- */
+  const defaultStats = () => ({
+    lotChanges: 0,
+    lotChangesByType: { parked: 0, returned: 0, soldFromLot: 0 },
+    soldFromCollection: 0,
+    soldFromLot: 0
+  });
+  const defaultData = () => ({ ideas: [], archive: [], stats: defaultStats() });
+
+  let loadFailed = false;
+
+  function loadData() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (!raw) return defaultData();
+      return sanitize(JSON.parse(raw));
+    } catch (err) {
+      console.warn('Idea Parking: could not read saved data', err);
+      loadFailed = true;
+      return defaultData();
+    }
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(data));
+      return true;
+    } catch (err) {
+      console.warn('Idea Parking: could not save data', err);
+      toast('⚠️ Could not save to browser storage. Export a backup soon.');
+      return false;
+    }
+  }
+
+  function normalizeIdea(x) {
+    if (!x || typeof x !== 'object') return null;
+    const id = (typeof x.id === 'string' || typeof x.id === 'number') ? String(x.id) : '';
+    const name = typeof x.name === 'string' ? x.name.trim().slice(0, 60) : '';
+    if (!id || !name) return null;
+    const status = x.status === 'parked' ? 'parked' : 'collection';
+    return {
+      id,
+      name,
+      description: typeof x.description === 'string' ? x.description.slice(0, 500) : '',
+      shape: SHAPES.includes(x.shape) ? x.shape : 'Sedan',
+      colour: COLOUR_NAMES.includes(x.colour) ? x.colour : 'Red',
+      stickers: Array.isArray(x.stickers) ? x.stickers.filter(s => STICKERS.includes(s)).slice(0, 3) : [],
+      status,
+      spot: status === 'parked' && Number.isInteger(x.spot) ? x.spot : null,
+      shiftCount: Number.isInteger(x.shiftCount) && x.shiftCount > 0 ? x.shiftCount : 0,
+      createdAt: Number.isFinite(x.createdAt) ? x.createdAt : Date.now()
+    };
+  }
+
+  function normalizeArchive(x) {
+    const core = normalizeIdea(x);
+    if (!core) return null;
+    return {
+      id: core.id,
+      name: core.name,
+      description: core.description,
+      shape: core.shape,
+      colour: core.colour,
+      stickers: core.stickers,
+      createdAt: core.createdAt,
+      soldAt: Number.isFinite(x.soldAt) ? x.soldAt : Date.now(),
+      soldHow: x.soldHow === 'completed' ? 'completed' : 'never-executed'
+    };
+  }
+
+  function sanitize(raw) {
+    const base = defaultData();
+    if (!raw || typeof raw !== 'object') return base;
+
+    const ideas = (Array.isArray(raw.ideas) ? raw.ideas : []).map(normalizeIdea).filter(Boolean);
+
+    // Guard against invalid or duplicate spots.
+    const used = new Set();
+    ideas.forEach(i => {
+      if (i.status !== 'parked') return;
+      if (i.spot == null || i.spot < 0 || i.spot >= SPOT_COUNT || used.has(i.spot)) {
+        i.status = 'collection';
+        i.spot = null;
+      } else {
+        used.add(i.spot);
+      }
+    });
+
+    const archive = (Array.isArray(raw.archive) ? raw.archive : []).map(normalizeArchive).filter(Boolean);
+
+    const s = raw.stats && typeof raw.stats === 'object' ? raw.stats : {};
+    const bt = s.lotChangesByType && typeof s.lotChangesByType === 'object' ? s.lotChangesByType : {};
+    const n = v => (Number.isFinite(v) && v > 0 ? Math.floor(v) : 0);
+
+    return {
+      ideas,
+      archive,
+      stats: {
+        lotChanges: n(s.lotChanges),
+        lotChangesByType: {
+          parked: n(bt.parked),
+          returned: n(bt.returned),
+          soldFromLot: n(bt.soldFromLot)
+        },
+        soldFromCollection: n(s.soldFromCollection),
+        soldFromLot: n(s.soldFromLot)
+      }
+    };
+  }
+
+  let data = loadData();
+  const ui = {
+    view: 'lot',
+    pickingId: null,      // collection car chosen for parking; waiting for a spot
+    detailId: null,       // idea open in the dialog
+    sort: 'newest',
+    addDraft: newDraft()
+  };
+
+  function newDraft() {
+    return { name: '', description: '', shape: 'Sedan', colour: 'Red', stickers: [] };
+  }
+
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+
+  function find(id) {
+    return data.ideas.find(i => i.id === id) || null;
+  }
+
+  function lotSpots() {
+    const spots = Array(SPOT_COUNT).fill(null);
+    data.ideas.forEach(i => {
+      if (i.status === 'parked' && i.spot != null) spots[i.spot] = i;
+    });
+    return spots;
+  }
+
+  function isLotFull() {
+    return lotSpots().every(Boolean);
+  }
+
+  function firstFreeSpot() {
+    const idx = lotSpots().indexOf(null);
+    return idx === -1 ? null : idx;
+  }
+
+  function sortedCollection() {
+    const list = data.ideas.filter(i => i.status === 'collection');
+    const cmp = {
+      newest: (a, b) => b.createdAt - a.createdAt,
+      shifts: (a, b) => (b.shiftCount - a.shiftCount) || (b.createdAt - a.createdAt),
+      name: (a, b) => a.name.localeCompare(b.name)
+    }[ui.sort] || ((a, b) => b.createdAt - a.createdAt);
+    return list.sort(cmp);
+  }
+
+  /* ---------- Mutations ---------- */
+  function createIdea(draft) {
+    const idea = {
+      id: uid(),
+      name: draft.name.trim().slice(0, 60),
+      description: draft.description.slice(0, 500),
+      shape: draft.shape,
+      colour: draft.colour,
+      stickers: [...draft.stickers],
+      status: 'collection',
+      spot: null,
+      shiftCount: 0,
+      createdAt: Date.now()
+    };
+    data.ideas.push(idea);
+    return idea;
+  }
+
+  function updateIdea(id, draft) {
+    const idea = find(id);
+    if (!idea) return;
+    idea.name = draft.name.trim().slice(0, 60);
+    idea.description = draft.description.slice(0, 500);
+    idea.shape = draft.shape;
+    idea.colour = draft.colour;
+    idea.stickers = [...draft.stickers];
+    commit(`Saved changes to "${idea.name}".`);
+  }
+
+  function parkIdea(id, spot = null) {
+    const idea = find(id);
+    if (!idea || idea.status !== 'collection') return;
+    const target = spot == null ? firstFreeSpot() : spot;
+    if (target == null) { toast('The lot is full.'); return; }
+    if (lotSpots()[target]) { toast('That spot is already taken.'); return; }
+
+    idea.status = 'parked';
+    idea.spot = target;
+    idea.shiftCount++;
+    data.stats.lotChanges++;
+    data.stats.lotChangesByType.parked++;
+    ui.pickingId = null;
+    commit(`"${idea.name}" parked in spot ${target + 1}.`);
+  }
+
+  function returnIdea(id) {
+    const idea = find(id);
+    if (!idea || idea.status !== 'parked') return;
+    idea.status = 'collection';
+    idea.spot = null;
+    idea.shiftCount++;
+    data.stats.lotChanges++;
+    data.stats.lotChangesByType.returned++;
+    commit(`"${idea.name}" returned to the collection.`);
+  }
+
+  function archiveIdea(idea, how) {
+    data.archive.unshift({
+      id: idea.id,
+      name: idea.name,
+      description: idea.description,
+      shape: idea.shape,
+      colour: idea.colour,
+      stickers: [...idea.stickers],
+      createdAt: idea.createdAt,
+      soldAt: Date.now(),
+      soldHow: how
+    });
+    data.ideas = data.ideas.filter(i => i.id !== idea.id);
+  }
+
+  function sellFromCollection(id) {
+    const idea = find(id);
+    if (!idea || idea.status !== 'collection') return;
+    if (!confirm(`Sell "${idea.name}" without ever executing it? It will move to the archive.`)) return;
+    archiveIdea(idea, 'never-executed');
+    data.stats.soldFromCollection++;
+    commit(`"${idea.name}" sold (never executed).`);
+  }
+
+  function sellFromLot(id) {
+    const idea = find(id);
+    if (!idea || idea.status !== 'parked') return;
+    if (!confirm(`Mark "${idea.name}" as completed and sell it from the lot?`)) return;
+    archiveIdea(idea, 'completed');
+    data.stats.soldFromLot++;
+    data.stats.lotChanges++;
+    data.stats.lotChangesByType.soldFromLot++;
+    commit(`"${idea.name}" completed and sold from the lot.`);
+  }
+
+  function deleteIdea(id) {
+    const idea = find(id);
+    if (!idea) return;
+    if (!confirm(`Delete "${idea.name}" permanently? This does not count as a sale.`)) return;
+    data.ideas = data.ideas.filter(i => i.id !== id);
+    if (ui.pickingId === id) ui.pickingId = null;
+    commit(`"${idea.name}" deleted.`);
+  }
+
+  function resetAll() {
+    if (!confirm('Reset ALL data? Every idea, the archive and all stats will be erased.')) return;
+    if (!confirm('Are you sure? This cannot be undone.')) return;
+    data = defaultData();
+    ui.pickingId = null;
+    ui.detailId = null;
+    ui.addDraft = newDraft();
+    commit('All data has been reset.');
+  }
+
+  function commit(message) {
+    save();
+    if (message) toast(message);
+    render();
+  }
+
+  /* ---------- Car SVG ---------- */
+  function carSVG(car) {
+    const shape = SHAPE_PATHS[car.shape] || SHAPE_PATHS.Sedan;
+    const colour = (COLOURS.find(c => c.name === car.colour) || COLOURS[0]).hex;
+    const stickers = car.stickers || [];
+    const positions = stickers.length === 1 ? [[100, 62]]
+      : stickers.length === 2 ? [[80, 62], [120, 62]]
+      : stickers.length === 3 ? [[70, 62], [100, 62], [130, 62]]
+      : [];
+    const stickerSVG = stickers.map((s, i) =>
+      `<text x="${positions[i][0]}" y="${positions[i][1]}" font-size="18" text-anchor="middle" dominant-baseline="middle">${s}</text>`
+    ).join('');
+    const wheel = x => `<circle cx="${x}" cy="88" r="12" fill="#1d1b2e"/><circle cx="${x}" cy="88" r="5" fill="#c9ced8"/>`;
+    const windows = shape.windows.map(d =>
+      `<path d="${d}" fill="#d6ecff" stroke="#1d1b2e" stroke-width="2" stroke-linejoin="round"/>`
+    ).join('');
+
+    return `<svg class="car-svg" viewBox="0 0 200 110" role="img" aria-label="${car.shape} in ${car.colour}${stickers.length ? ' with stickers' : ''}">
+      <ellipse cx="100" cy="100" rx="86" ry="5" fill="rgba(0,0,0,.18)"/>
+      <path d="${shape.body}" fill="${colour}" stroke="#1d1b2e" stroke-width="3" stroke-linejoin="round"/>
+      ${windows}
+      ${stickerSVG}
+      ${wheel(52)}${wheel(150)}
+    </svg>`;
+  }
+
+  /* ---------- Escaping ---------- */
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  /* ---------- Toast ---------- */
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => t.classList.remove('show'), 2600);
+  }
+
+  /* ---------- Shared idea form ---------- */
+  function formTemplate(d, p, submitLabel) {
+    return `
+      <form class="idea-form" novalidate>
+        <div class="preview">${carSVG(d)}</div>
+
+        <div class="field">
+          <label for="${p}-name">Name</label>
+          <input id="${p}-name" name="name" type="text" maxlength="60" required
+                 value="${esc(d.name)}" placeholder="e.g. Learn to bake sourdough"
+                 aria-describedby="${p}-err">
+          <div class="err" id="${p}-err" role="alert"></div>
+        </div>
+
+        <div class="field">
+          <label for="${p}-desc">
+            <span>Description</span>
+            <span class="count"><span data-count>${d.description.length}</span>/500</span>
+          </label>
+          <textarea id="${p}-desc" name="description" maxlength="500" rows="3">${esc(d.description)}</textarea>
+        </div>
+
+        <fieldset>
+          <legend>Body shape</legend>
+          <div class="chips">
+            ${SHAPES.map(s => `<button type="button" class="chip" data-kind="shape" data-value="${s}" aria-pressed="${d.shape === s}">${s}</button>`).join('')}
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Colour</legend>
+          <div class="swatches">
+            ${COLOURS.map(c => `<button type="button" class="swatch" data-kind="colour" data-value="${c.name}" aria-label="${c.name}" title="${c.name}" aria-pressed="${d.colour === c.name}" style="--c:${c.hex}"></button>`).join('')}
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Stickers (up to 3)</legend>
+          <div class="stickers">
+            ${STICKERS.map(s => `<button type="button" class="sticker" data-kind="sticker" data-value="${s}" aria-label="Sticker ${s}" aria-pressed="${d.stickers.includes(s)}">${s}</button>`).join('')}
+          </div>
+          <p class="hint">${d.stickers.length} of 3 selected</p>
+        </fieldset>
+
+        <div class="form-actions">
+          <button type="submit" class="btn primary">${submitLabel}</button>
+        </div>
+      </form>`;
+  }
+
+  function setErr(host, msg) {
+    const el = host.querySelector('.err');
+    if (el) el.textContent = msg;
+  }
+
+  function mountForm(host, draft, opts) {
+    host.innerHTML = formTemplate(draft, opts.prefix, opts.submitLabel);
+
+    host.onclick = e => {
+      const b = e.target.closest('button[data-kind]');
+      if (!b || !host.contains(b)) return;
+      const kind = b.dataset.kind;
+      const val = b.dataset.value;
+
+      if (kind === 'shape') {
+        draft.shape = val;
+      } else if (kind === 'colour') {
+        draft.colour = val;
+      } else if (kind === 'sticker') {
+        if (draft.stickers.includes(val)) {
+          draft.stickers = draft.stickers.filter(s => s !== val);
+        } else if (draft.stickers.length >= 3) {
+          toast('You can pick up to 3 stickers.');
+          return;
+        } else {
+          draft.stickers = [...draft.stickers, val];
+        }
+      }
+
+      mountForm(host, draft, opts);
+      const again = host.querySelector(`button[data-kind="${kind}"][data-value="${CSS.escape(val)}"]`);
+      if (again) again.focus();
+    };
+
+    host.oninput = e => {
+      if (e.target.name === 'name') {
+        draft.name = e.target.value;
+        setErr(host, '');
+      } else if (e.target.name === 'description') {
+        draft.description = e.target.value;
+        const counter = host.querySelector('[data-count]');
+        if (counter) counter.textContent = draft.description.length;
+      }
+    };
+
+    host.onsubmit = e => {
+      e.preventDefault();
+      const name = draft.name.trim();
+      if (!name) {
+        setErr(host, 'Please give your idea a name.');
+        const input = host.querySelector('input[name="name"]');
+        if (input) input.focus();
+        return;
+      }
+      draft.name = name.slice(0, 60);
+      draft.description = draft.description.slice(0, 500);
+      opts.onSave(draft);
+    };
+  }
+
+  /* ---------- Views ---------- */
+  function viewLot() {
+    const spots = lotSpots();
+    const full = spots.every(Boolean);
+    const occupied = spots.filter(Boolean).length;
+    const picking = ui.pickingId ? find(ui.pickingId) : null;
+    if (ui.pickingId && (!picking || picking.status !== 'collection')) ui.pickingId = null;
+    const pick = ui.pickingId ? find(ui.pickingId) : null;
+
+    let banners = '';
+    if (full) {
+      banners += `<div class="banner full"><span>🚫 <strong>Lot full.</strong> All 6 spots are taken. Return or sell a car to free a spot.</span></div>`;
+    }
+    if (pick) {
+      banners += `<div class="banner pick">
+        <span>Choose an empty spot for <strong>${esc(pick.name)}</strong>.</span>
+        <button class="btn small" data-action="cancel-pick">Cancel</button>
+      </div>`;
+    } else if (!full) {
+      banners += `<div class="banner">
+        <span>Tap a parked car for options, or pick a car from your collection to park it.</span>
+        <button class="btn small" data-view="collection">Choose a car</button>
+      </div>`;
+    }
+
+    const cells = spots.map((car, i) => {
+      if (car) {
+        return `<button class="spot" data-action="open-parked" data-id="${car.id}" aria-label="Spot ${i + 1}: ${esc(car.name)}. Open options.">
+          <span class="spot-num">${i + 1}</span>
+          ${carSVG(car)}
+          <span class="spot-name">${esc(car.name)}</span>
+        </button>`;
+      }
+      if (pick) {
+        return `<button class="spot target" data-action="park-spot" data-spot="${i}" aria-label="Park ${esc(pick.name)} in spot ${i + 1}">
+          <span class="spot-num">${i + 1}</span>
+          <span class="empty-label">Park here</span>
+        </button>`;
+      }
+      return `<div class="spot" role="group" aria-label="Spot ${i + 1}, empty">
+        <span class="spot-num">${i + 1}</span>
+        <span class="empty-label">Empty</span>
+      </div>`;
+    }).join('');
+
+    return `
+      ${banners}
+      <div class="lot" role="group" aria-label="Parking lot">${cells}</div>
+      <p class="lot-foot">${SPOT_COUNT - occupied} of ${SPOT_COUNT} spots free</p>`;
+  }
+
+  function viewCollection() {
+    const list = sortedCollection();
+    const addBtn = `<button class="btn primary" data-view="add">➕ Add idea</button>`;
+    if (list.length === 0) {
+      return `<section class="panel empty">
+        <p>Your collection is empty. Add your first idea and give it a car!</p>
+        ${addBtn}
+      </section>`;
+    }
+    return `
+      <div class="toolbar">
+        <p class="muted" style="margin:0">${list.length} idea${list.length === 1 ? '' : 's'} in the collection</p>
+        <label>Sort&nbsp;
+          <select id="sort" aria-label="Sort collection">
+            <option value="newest" ${ui.sort === 'newest' ? 'selected' : ''}>Newest</option>
+            <option value="shifts" ${ui.sort === 'shifts' ? 'selected' : ''}>Most shifts</option>
+            <option value="name" ${ui.sort === 'name' ? 'selected' : ''}>Name A–Z</option>
+          </select>
+        </label>
+        ${addBtn}
+      </div>
+      <div class="cards">
+        ${list.map(i => `
+          <button class="card" data-action="open-card" data-id="${i.id}" aria-label="${esc(i.name)}, ${i.shiftCount} shifts">
+            ${carSVG(i)}
+            <span class="card-name">${esc(i.name)}</span>
+            <span class="badge">🔁 ${i.shiftCount}</span>
+          </button>`).join('')}
+      </div>`;
+  }
+
+  function viewAdd() {
+    return `
+      <section class="panel">
+        <h2>Add an idea</h2>
+        <p class="muted">Design its car, then send it to the collection. You can park it any time.</p>
+        <div id="add-host"></div>
+      </section>`;
+  }
+
+  function viewArchive() {
+    if (data.archive.length === 0) {
+      return `<section class="panel empty"><p>Nothing sold yet. Sold ideas will appear here.</p></section>`;
+    }
+    const items = [...data.archive].sort((a, b) => b.soldAt - a.soldAt);
+    return `<ul class="arch-list">
+      ${items.map(a => `
+        <li class="arch-item">
+          ${carSVG(a)}
+          <div>
+            <strong>${esc(a.name)}</strong><br>
+            <span class="badge">${a.soldHow === 'completed' ? '✅ Completed (sold from lot)' : '🫥 Never executed (sold from collection)'}</span>
+            <div class="muted">Sold ${new Date(a.soldAt).toLocaleDateString()}</div>
+          </div>
+        </li>`).join('')}
+    </ul>`;
+  }
+
+  function renderStats() {
+    const inCollection = data.ideas.filter(i => i.status === 'collection').length;
+    const parked = lotSpots().filter(Boolean).length;
+    const s = data.stats;
+    const bt = s.lotChangesByType;
+    document.getElementById('stats').innerHTML = `
+      <div class="stat-grid">
+        <div class="stat"><span class="num">${inCollection}</span><span class="label">Ideas in collection</span></div>
+        <div class="stat"><span class="num">${parked} / ${SPOT_COUNT}</span><span class="label">Cars parked</span></div>
+        <div class="stat">
+          <span class="num">${s.lotChanges}</span>
+          <span class="label">Total lot changes</span>
+          <ul class="breakdown">
+            <li>Parked: ${bt.parked}</li>
+            <li>Returned to collection: ${bt.returned}</li>
+            <li>Sold from lot: ${bt.soldFromLot}</li>
+          </ul>
+        </div>
+        <div class="stat"><span class="num">${s.soldFromCollection}</span><span class="label">Sold from collection (never executed)</span></div>
+        <div class="stat"><span class="num">${s.soldFromLot}</span><span class="label">Sold from lot (completed)</span></div>
+      </div>`;
+  }
+
+  function renderNav() {
+    document.querySelectorAll('.tab').forEach(btn => {
+      if (btn.dataset.view === ui.view) btn.setAttribute('aria-current', 'page');
+      else btn.removeAttribute('aria-current');
+    });
+  }
+
+  function renderView() {
+    const main = document.getElementById('main');
+    if (ui.view === 'collection') {
+      main.innerHTML = viewCollection();
+    } else if (ui.view === 'add') {
+      main.innerHTML = viewAdd();
+      mountForm(document.getElementById('add-host'), ui.addDraft, {
+        prefix: 'add',
+        submitLabel: 'Save to collection',
+        onSave: draft => {
+          const idea = createIdea(draft);
+          ui.addDraft = newDraft();
+          ui.view = 'collection';
+          commit(`"${idea.name}" is in your collection.`);
+        }
+      });
+    } else if (ui.view === 'archive') {
+      main.innerHTML = viewArchive();
+    } else {
+      main.innerHTML = viewLot();
+    }
+  }
+
+  function render() {
+    renderStats();
+    renderNav();
+    renderView();
+  }
+
+  /* ---------- Detail dialog ---------- */
+  const dialog = document.getElementById('dialog');
+
+  function openDetail(id) {
+    const idea = find(id);
+    if (!idea) return;
+    ui.detailId = id;
+    const parked = idea.status === 'parked';
+    const full = isLotFull();
+
+    const actions = parked
+      ? `<button class="btn ok" data-detail="sell-lot">✅ Sell (completed)</button>
+         <button class="btn" data-detail="return">↩️ Return to collection</button>`
+      : `<button class="btn" data-detail="park" ${full ? 'disabled' : ''}>🅿️ Park (choose spot)</button>
+         <button class="btn" data-detail="park-first" ${full ? 'disabled' : ''}>Park in first free spot</button>
+         <button class="btn warn" data-detail="sell-collection">Sell (never executed)</button>`;
+
+    document.getElementById('dialog-body').innerHTML = `
+      <div class="dialog-inner">
+        <button class="btn ghost close-x" data-detail="close" aria-label="Close">✕</button>
+        <div class="detail-head">
+          ${carSVG(idea)}
+          <div>
+            <h2 id="detail-title">${esc(idea.name)}</h2>
+            <p class="muted">${parked ? `Parked in spot ${idea.spot + 1} of ${SPOT_COUNT}` : 'In collection'}</p>
+            <span class="badge">🔁 Shifts: ${idea.shiftCount}</span>
+          </div>
+        </div>
+        <p class="desc">${idea.description ? esc(idea.description) : '<em class="muted">No description yet.</em>'}</p>
+        <div class="actions">
+          ${actions}
+          <button class="btn danger" data-detail="delete">Delete</button>
+        </div>
+        <hr>
+        <h3>Edit details</h3>
+        <div id="detail-form"></div>
+      </div>`;
+
+    mountForm(document.getElementById('detail-form'), { ...idea, stickers: [...idea.stickers] }, {
+      prefix: 'dt',
+      submitLabel: 'Save changes',
+      onSave: draft => {
+        closeDialog();
+        updateIdea(id, draft);
+      }
+    });
+
+    dialog.showModal();
+  }
+
+  function closeDialog() {
+    if (dialog.open) dialog.close();
+    ui.detailId = null;
+  }
+
+  function startPick(id) {
+    const idea = find(id);
+    if (!idea) return;
+    if (isLotFull()) { toast('The lot is full.'); return; }
+    ui.pickingId = id;
+    ui.view = 'lot';
+    render();
+    toast(`Choose an empty spot for ${idea.name}.`);
+    setTimeout(() => {
+      const target = document.querySelector('.spot.target');
+      if (target) target.focus();
+    }, 0);
+  }
+
+  dialog.addEventListener('click', e => {
+    const b = e.target.closest('[data-detail]');
+    if (!b) return;
+    const id = ui.detailId;
+    const action = b.dataset.detail;
+    closeDialog();
+    if (!id) return;
+    switch (action) {
+      case 'park':           startPick(id); break;
+      case 'park-first':     parkIdea(id); break;
+      case 'return':         returnIdea(id); break;
+      case 'sell-collection':sellFromCollection(id); break;
+      case 'sell-lot':       sellFromLot(id); break;
+      case 'delete':         deleteIdea(id); break;
+      default: break;
+    }
+  });
+
+  /* ---------- Global event handling ---------- */
+  document.addEventListener('click', e => {
+    const el = e.target.closest('[data-action],[data-view]');
+    if (!el) return;
+
+    if (el.dataset.view) {
+      ui.view = el.dataset.view;
+      render();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    switch (el.dataset.action) {
+      case 'open-card':
+      case 'open-parked':
+        openDetail(el.dataset.id);
+        break;
+      case 'park-spot':
+        if (ui.pickingId) parkIdea(ui.pickingId, Number(el.dataset.spot));
+        break;
+      case 'cancel-pick':
+        ui.pickingId = null;
+        render();
+        break;
+      case 'export':
+        exportData();
+        break;
+      case 'import':
+        document.getElementById('import-file').click();
+        break;
+      case 'reset':
+        resetAll();
+        break;
+      default:
+        break;
+    }
+  });
+
+  document.addEventListener('change', e => {
+    if (e.target.id === 'sort') {
+      ui.sort = e.target.value;
+      renderView();
+    } else if (e.target.id === 'import-file') {
+      handleImport(e.target);
+    }
+  });
+
+  /* ---------- Export / import ---------- */
+  function exportData() {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `idea-parking-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast('Backup downloaded.');
+  }
+
+  function handleImport(input) {
+    const file = input.files && input.files[0];
+    input.value = '';
+    if (!file) return;
+    file.text()
+      .then(text => {
+        let parsed;
+        try {
+          parsed = JSON.parse(text);
+        } catch {
+          throw new Error('file is not valid JSON');
+        }
+        if (!parsed || !Array.isArray(parsed.ideas)) {
+          throw new Error('this does not look like an Idea Parking backup');
+        }
+        if (!confirm('Importing replaces all current ideas, archive and stats. Continue?')) return;
+        data = sanitize(parsed);
+        ui.pickingId = null;
+        ui.detailId = null;
+        save();
+        render();
+        toast('Backup imported.');
+      })
+      .catch(err => toast(`Import failed: ${err.message}`));
+  }
+
+  /* ---------- Init ---------- */
+  render();
+  if (loadFailed) {
+    setTimeout(() => toast('Saved data could not be read, so starting fresh.'), 300);
+  }
+})();
+</script>
+</body>
+</html>
